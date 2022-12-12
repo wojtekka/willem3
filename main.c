@@ -213,6 +213,7 @@ void usage(const char *argv0)
                     "  -r, --read=FILENAME   read chip to the specified file\n"
                     "  -w, --write=FILENAME  write chip from the specified file\n"
                     "  -v, --verify          verify after writing\n"
+                    "  -o, --offset=BYTES    start reading or writing at specified offset\n"
                     "  -s, --size=BYTES      override chip size when reading\n"
                     "  -h, --help            print this message\n"
                     "\n"
@@ -230,6 +231,7 @@ int main(int argc, char **argv)
     const char *do_write = NULL;
     bool do_verify = false;
     uint32_t size = 0;
+    uint32_t offset = 0;
 
     while (true)
     {
@@ -241,13 +243,14 @@ int main(int argc, char **argv)
             { "read",           required_argument,  0, 'r' },
             { "write",          required_argument,  0, 'w' },
             { "verify",         no_argument,        0, 'v' },
+            { "offset",         required_argument,  0, 'o' },
             { "size",           required_argument,  0, 's' },
             { "help",           no_argument,        0, 'h' },
             { 0,                0,                  0, 0 }
         };
 
         int option_index = 0;
-        int c = getopt_long(argc, argv, "p:ebr:w:vs:h", long_options, &option_index);
+        int c = getopt_long(argc, argv, "p:ebr:w:vs:o:h", long_options, &option_index);
 
         if (c == -1)
         {
@@ -282,14 +285,31 @@ int main(int argc, char **argv)
             do_write = optarg;
             break;
 
-        case 's':
-            size = atoi(optarg);
-            if (size == 0)
+        case 'o':
+        {
+            char *endptr = NULL;
+            unsigned long tmp = strtoul(optarg, &endptr, 0);
+            if (tmp > UINT32_MAX || (tmp == ULONG_MAX && errno == ERANGE) || (tmp == 0 && errno == EINVAL) || (*endptr != 0))
             {
-                fprintf(stderr, "Invalid size %s\n", optarg);
+                fprintf(stderr, "Invalid offset '%s'\n", optarg);
                 exit(1);
             }
+            offset = (uint32_t) tmp;
             break;
+        }
+
+        case 's':
+        {
+            char *endptr = NULL;
+            unsigned long tmp = strtoul(optarg, &endptr, 0);
+            if (tmp > UINT32_MAX || (tmp == ULONG_MAX && errno == ERANGE) || (tmp == 0 && errno == EINVAL) || (*endptr != 0))
+            {
+                fprintf(stderr, "Invalid size '%s'\n", optarg);
+                exit(1);
+            }
+            size = (uint32_t) tmp;
+            break;
+        }
 
         case 'v':
             do_verify = true;
@@ -396,12 +416,12 @@ int main(int argc, char **argv)
                 fflush(stdout);
             }
 
-            uint8_t byte = read_data(addr);
+            uint8_t byte = read_data(offset + addr);
 
             if (byte != 0xff)
             {
                 printf("\n");
-                fprintf(stderr, "Black check failed at 0x%08x: 0x%02x\n", addr, byte);
+                fprintf(stderr, "Black check failed at 0x%08x: 0x%02x\n", offset + addr, byte);
                 goto failure;
             }
         }
@@ -481,17 +501,33 @@ int main(int argc, char **argv)
 
             if (cc->sector_size > 0)
             {
-                flash_write(addr, buf, read_len);
+                bool empty = true;
+                for (size_t i = 0; empty && i < read_len; ++i)
+                {
+                    if (buf[i] != 0xff)
+                    {
+                        empty = false;
+                    }
+                }
+
+                if (!empty)
+                {
+                    flash_write(offset + addr, buf, read_len);
+                    usleep(cc->max_write_usec);
+                }
                 addr += cc->sector_size;
                 size += read_len;
-                usleep(cc->max_write_usec);
             }
             else
             {
                 for (size_t i = 0; i < read_len; ++i)
                 {
-                    flash_write(addr++, &buf[i], 1);
-                    usleep(cc->max_write_usec);
+                    if (buf[i] != 0xff)
+                    {
+                        flash_write(offset + addr, &buf[i], 1);
+                        usleep(cc->max_write_usec);
+                    }
+                    addr++;
                 }
                 size += read_len;
             }
@@ -540,13 +576,13 @@ int main(int argc, char **argv)
                 fflush(stdout);
             }
 
-            uint8_t byte = read_data(addr);
+            uint8_t byte = read_data(offset + addr);
 
             if (byte != buf[addr])
             {
                 free(buf);
                 printf("\n");
-                fprintf(stderr, "Verification failed at 0x%08x: expected 0x%02x, actual 0x%02x\n", addr, buf[addr], byte);
+                fprintf(stderr, "Verification failed at 0x%08x: expected 0x%02x, actual 0x%02x\n", offset + addr, buf[addr], byte);
                 goto failure;
             }
         }
