@@ -41,17 +41,18 @@
 #include <string.h>
 #include <getopt.h>
 #include <sched.h>
+#include <limits.h>
 
 #define DEFAULT_PORT "/dev/parport0"
 
 struct chip_config
 {
-    uint16_t id;
-    uint32_t size;
-    uint32_t sector_size;
-    const char *name;
-    unsigned int max_write_usec;
-    unsigned int max_chip_erase_sec;
+    uint16_t id;                        /* Chip id (manufacturer and device) */
+    uint32_t size;                      /* Size in bytes */
+    uint32_t sector_size;               /* Sector size or 0 if byte-programmed */
+    const char *name;                   /* Chip name */
+    unsigned int max_write_usec;        /* Maximum sector/byte write time in microseconds */
+    unsigned int max_chip_erase_sec;    /* Maximum chip erase time in seconds */
 };
 
 #define K(x) ((x) * 1024)
