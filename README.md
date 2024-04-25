@@ -16,18 +16,18 @@ All the chips mentioned above should work with the following jumper settings. Pl
 
 ```
                                              J1
-                                              .
-                                             ..
-                                             ##
+                                              • 
+                                             •• 
+                                             ██
 
-                                             J2
-                                             ##
-                                             ..
-                                             .
-                                             .
+                                             J2     J8
+                                             ██     •
+                                             ••     █
+                                             •      █
+                                             •
 J3
-#           #     #  #           #  #
-#     #  #     #        #  #  #        #
-.     1  2  3  4  5  6  7  8  9  10 11 12
+█     ░  ░  █  ░  █  █  ░  ░  ░  █  █  ░
+█     █  █  ░  █  ░  ░  █  █  █  ░  ░  █
+•     1  2  3  4  5  6  7  8  9  10 11 12
 ```
 
