@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Wojtek Kaniewski <wojtekka@toxygen.net>
+ * Copyright (c) 2022-2024 Wojtek Kaniewski <wojtekka@toxygen.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -581,9 +581,9 @@ int main(int argc, char **argv)
 
             if (byte != buf[addr])
             {
-                free(buf);
                 printf("\n");
                 fprintf(stderr, "Verification failed at 0x%08x: expected 0x%02x, actual 0x%02x\n", offset + addr, buf[addr], byte);
+                free(buf);
                 goto failure;
             }
         }
