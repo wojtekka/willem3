@@ -65,7 +65,5 @@ int pp_rcontrol(const pp_t *p);
 int pp_wdata(const pp_t *p, unsigned char val);
 int pp_rdata(const pp_t *p);
 
-int pp_realtime(void);
-
 #endif /* PP_H */
 
