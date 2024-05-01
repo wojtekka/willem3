@@ -1,0 +1,275 @@
+<!doctype html>
+<html>
+    <head>
+<style type="text/css">
+.empty {}
+.full { background-color:black; color: white; }
+table {
+    border-collapse: separate;
+    empty-cells: hide;
+}
+</style>
+    </head>
+    <body>
+<table>
+    <tr>
+        <td rowspan=2>
+
+<table border=2>
+    <tr><td>1</td><td></td><td><select id="p1" onchange="update_combos()"><option></option><option>VPP</option><option>A18</option></select><td rowspan="16" width="100"></td><td>VCC</td><td></td><td>32</td></tr>
+    <tr><td>2</td><td></td><td>A16</td><td><select id="p31" onchange="update_combos()"><option></option><option>/WE</option><option>A18</option></select></td><td></td><td>31</td></tr>
+    <tr><td>3</td><td>1</td><td><select id="p3" onchange="update_combos()"><option></option><option>VPP</option><option>A15</option><option>A11</option></select></td><td><select id="p30" onchange="update_combos()"><option></option><option>VCC</option><option>A17</option><option>VPP</option></select></td><td>28</td><td>30</td></tr>
+    <tr><td>4</td><td>2</td><td>A12</td><td><select id="p29" onchange="update_combos()"><option></option><option>A14</option><option>/WE</option></select></td><td>27</td><td>29</td></tr>
+    <tr><td>5</td><td>3</td><td>A7</td><td><select id="p28" onchange="update_combos()"><option></option><option>A13</option></select></td><td>26</td><td>28</td></tr>
+    <tr><td>6</td><td>4</td><td>A6</td><td>A8</td><td>25</td><td>27</td></tr>
+    <tr><td>7</td><td>5</td><td>A5</td><td><select id="p26" onchange="update_combos()"><option></option><option>A9</option><option>A9+VPP</option></select></td><td>24</td><td>26</td></tr>
+    <tr><td>8</td><td>6</td><td>A4</td><td><select id="p25" onchange="update_combos()"><option></option><option>A11</option></select></td><td>23</td><td>25</td></tr>
+    <tr><td>9</td><td>7</td><td>A3</td><td><select id="p24" onchange="update_combos()"><option></option><option>/OE</option><option>VPP</option></select></td><td>22</td><td>24</td></tr>
+    <tr><td>10</td><td>8</td><td>A2</td><td>A10</td><td>21</td><td>23</td></tr>
+    <tr><td>11</td><td>9</td><td>A1</td><td><select onchange="update_combos()" id="p22"><option>GND</option><option>/WE</option></td><td>20</td><td>22</td></tr>
+    <tr><td>12</td><td>10</td><td>A0</td><td>D7</td><td>19</td><td>21</td></tr>
+    <tr><td>13</td><td>11</td><td>D0</td><td>D6</td><td>18</td><td>20</td></tr>
+    <tr><td>14</td><td>12</td><td>D1</td><td>D5</td><td>17</td><td>19</td></tr>
+    <tr><td>15</td><td>13</td><td>D2</td><td>D4</td><td>16</td><td>18</td></tr>
+    <tr><td>16</td><td>14</td><td>GND</td><td>D3</td><td>15</td><td>17</td></tr>
+</table>
+
+        </td>
+        <td>
+            &nbsp; &nbsp; &nbsp; &nbsp;
+        </td>
+        <td>
+            <table border="2">
+                <tr><td colspan=2>J1</td></tr>
+                <tr><td></td><td id="j1_3">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j1_1">&nbsp;&bull;&nbsp;</td><td id="j1_4">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j1_2">&nbsp;&bull;&nbsp;</td><td id="j1_5">&nbsp;&bull;&nbsp;</td></tr>
+            </table>
+        </td>
+        <td>
+            &nbsp; &nbsp; &nbsp; &nbsp;
+        </td>
+        <td>
+            <table border="2">
+                <tr><td>J7</td></tr>
+                <tr><td id="j7_1">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j7_2">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j7_3">&nbsp;&bull;&nbsp;</td></tr>
+            </table>
+        </td>
+        <td>
+            &nbsp; &nbsp; &nbsp; &nbsp;
+        </td>
+        <td>
+            <table border="2">
+                <tr><td>J6</td></tr>
+                <tr><td id="j6_1">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j6_2">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j6_3">&nbsp;&bull;&nbsp;</td></tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>
+        </td>
+        <td>
+            <table border="2">
+                <tr><td colspan=2>J2</td></tr>
+                <tr><td id="j2_1">&nbsp;&bull;&nbsp;</td><td id="j2_5">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j2_2">&nbsp;&bull;&nbsp;</td><td id="j2_6">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j2_3">&nbsp;&bull;&nbsp;</td><td></td></tr>
+                <tr><td id="j2_4">&nbsp;&bull;&nbsp;</td><td></td></tr>
+            </table>
+        </td>
+        <td>
+        </td>
+        <td>
+            <table border="2">
+                <tr><td>J8</td></tr>
+                <tr><td id="j8_1">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j8_2">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j8_3">&nbsp;&bull;&nbsp;</td></tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<p></p>
+
+<table>
+    <tr>
+        <td>
+            <table border="2">
+                <tr><td>J3</td></tr>
+                <tr><td id="j3_1">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j3_2">&nbsp;&bull;&nbsp;</td></tr>
+                <tr><td id="j3_3">&nbsp;&bull;&nbsp;</td></tr>
+            </table>
+        </td>
+        <td>
+            &nbsp; &nbsp; &nbsp; &nbsp;
+        </td>
+        <td>
+
+<table border=2>
+<tr>
+    <td><input type="radio" onchange="update_readme()" id="s1on" name="s1" value="on"><br><input type="radio" onchange="update_readme()" id="s1off" name="s1" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s2on" name="s2" value="on"><br><input type="radio" onchange="update_readme()" id="s2off" name="s2" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s3on" name="s3" value="on"><br><input type="radio" onchange="update_readme()" id="s3off" name="s3" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s4on" name="s4" value="on"><br><input type="radio" onchange="update_readme()" id="s4off" name="s4" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s5on" name="s5" value="on"><br><input type="radio" onchange="update_readme()" id="s5off" name="s5" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s6on" name="s6" value="on"><br><input type="radio" onchange="update_readme()" id="s6off" name="s6" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s7on" name="s7" value="on"><br><input type="radio" onchange="update_readme()" id="s7off" name="s7" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s8on" name="s8" value="on"><br><input type="radio" onchange="update_readme()" id="s8off" name="s8" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s9on" name="s9" value="on"><br><input type="radio" onchange="update_readme()" id="s9off" name="s9" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s10on" name="s10" value="on"><br><input type="radio" onchange="update_readme()" id="s10off" name="s10" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s11on" name="s11" value="on"><br><input type="radio" onchange="update_readme()" id="s11off" name="s11" value="off"></td>
+    <td><input type="radio" onchange="update_readme()" id="s12on" name="s12" value="on"><br><input type="radio" onchange="update_readme()" id="s12off" name="s12" value="off"></td>
+</tr>
+<tr>
+    <td>1</td>
+    <td>2</td>
+    <td>3</td>
+    <td>4</td>
+    <td>5</td>
+    <td>6</td>
+    <td>7</td>
+    <td>8</td>
+    <td>9</td>
+    <td>10</td>
+    <td>11</td>
+    <td>12</td>
+</tr>
+</table>
+
+        </td>
+    </tr>
+</table>
+
+<p>
+VCC <select onchange="update_combos()" id="vcc"><option>5.0 V</option><option>5.5 V</option><option>6.5 V</option></select>
+</p>
+
+<p>
+VPP <select onchange="update_combos()" id="vpp"><option>12 V</option><option>15 V</option><option>21 V</option><option>25 V</option></select>
+</p>
+
+<p>
+<input onchange="update_combos()" type="checkbox" id="vpp_or_vcc"><label for="vpp_or_vcc">VPP set to VCC when inactive</input>
+</p>
+
+<p>
+<textarea id="readme" rows="5" cols="40">
+</textarea>
+</p>
+
+<script>
+function $(x) { return document.getElementById(x); }
+
+function set_switch(id, value)
+{
+    $("s" + id + "on").checked = (value === true);
+    $("s" + id + "off").checked = (value === false);
+}
+
+function set_jumper(id, pin, value)
+{
+    $("j" + id + "_" + pin).className = value ? 'full' : 'empty';
+}
+
+function set_jumper_2(id, p1, p2, value)
+{
+    set_jumper(id, p1, value);
+    set_jumper(id, p2, value);
+}
+
+function set_jumper_3(id, p1, p2, p3)
+{
+    set_jumper(id, 1, p1);
+    set_jumper(id, 2, p2);
+    set_jumper(id, 3, p3);
+}
+
+function update_combos()
+{
+    var p1 = $("p1").value;
+    set_jumper_3(3, p1 == "A18", p1 == "VPP" || p1 == "A18", p1 == "VPP");
+
+    var p3 = $("p3").value;
+    set_switch(1, p3 == "VPP");
+    set_switch(3, p3 == "A15");
+    set_jumper_2(2, 3, 4, p3 == "/WE");
+
+    var p31 = $("p31").value;
+    set_switch(11, p31 == "/WE");
+    set_switch(12, p31 == "A18");
+
+    var p30 = $("p30").value;
+    set_switch(9, p30 == "VCC");
+    set_switch(10, p30 == "A17");
+    set_jumper_2(1, 1, 4, p30 == "VPP");
+
+    var p29 = $("p29").value;
+    set_switch(4, p29 == "/WE");
+    set_switch(5, p29 == "A14");
+
+    var p28 = $("p28").value;
+    set_jumper(1, 5, p28 == "VPP" || p28 == "A13");
+    set_jumper(1, 2, p28 == "A13");
+    set_jumper(1, 4, p28 == "VPP");
+
+    var p26 = $("p26").value;
+    set_jumper(1, 3, p26 == "A9+VPP");
+    set_jumper(1, 4, p26 == "A9+VPP" || p28 == "VPP");
+
+    var p25 = $("p25").value;
+    set_jumper_2(2, 1, 5, p25 == "A11");
+
+    var p24 = $("p24").value;
+    set_switch(6, p24 == "/OE");
+    set_switch(7, p24 == "VPP");
+
+    var p22 = $("p22").value;
+    set_switch(8, p22 == "/WE");
+
+    var vcc = $("vcc").value;
+    set_jumper(8, 1, vcc == "5.5 V");
+    set_jumper(8, 2, vcc == "5.5 V" || vcc == "5.0 V");
+    set_jumper(8, 3, vcc == "5.0 V");
+
+    var vpp = $("vpp").value;
+    set_jumper(7, 1, vpp == "21 V" || vpp == "12 V");
+    set_jumper(7, 2, true);
+    set_jumper(7, 3, vpp == "25 V" || vpp == "15 V");
+    set_jumper(6, 1, vpp == "21 V" || vpp == "25 V");
+    set_jumper(6, 2, true);
+    set_jumper(6, 3, vpp == "12 V" || vpp == "15 V");
+
+    set_switch(2, $("vpp_or_vcc").checked);
+
+    update_readme();
+}
+
+function update_readme()
+{
+    var readme = "J3\n";
+    readme += ($("j3_1").className == "full") ? "█     " : "•     ";
+    for (i = 1; i <= 12; ++i)
+        readme += ($("s" + i + "on").checked) ? "█  " : "░  ";
+    readme += "ON\n";
+    readme += ($("j3_2").className == "full") ? "█     " : "•     ";
+    for (i = 1; i <= 12; ++i)
+        readme += ($("s" + i + "off").checked) ? "█  " : "░  ";
+    readme += "\n";
+    readme += ($("j3_3").className == "full") ? "█     " : "•     ";
+    for (i = 1; i <= 12; ++i)
+        readme += i + ((i < 10) ? "  " : " ");
+    readme += "\n";
+    $("readme").value = readme;
+}
+
+update_combos();
+
+</script>
+
+</html>
