@@ -75,57 +75,6 @@ struct chip_config chip_config[] =
 
 pp_t pp;
 
-void write_address(uint32_t value)
-{
-    pp_wdata(&pp, 0);
-    pp_wcontrol(&pp, pp_rcontrol(&pp) | PARPORT_CONTROL_AUTOFD);
-    int i;
-    for (i = 0; i < 24; ++i)
-    {
-        uint8_t data = (value & 0x00800000) ? 2 : 0;    // D
-        pp_wdata(&pp, data);
-        pp_wdata(&pp, data | 1);    // CLK
-        pp_wdata(&pp, data);
-        value <<= 1;
-    }
-    pp_wcontrol(&pp, pp_rcontrol(&pp) & ~PARPORT_CONTROL_AUTOFD);
-}
-
-void write_data(uint32_t addr, uint8_t value)
-{
-    write_address(addr);
-
-    pp_wcontrol(&pp, (pp_rcontrol(&pp) & ~PARPORT_CONTROL_AUTOFD) | PARPORT_CONTROL_SELECT);
-    pp_wdata(&pp, value);
-    pp_wcontrol(&pp, pp_rcontrol(&pp) & ~PARPORT_CONTROL_SELECT);
-    pp_wcontrol(&pp, pp_rcontrol(&pp) | PARPORT_CONTROL_SELECT);
-}
-
-uint8_t read_data(uint32_t addr)
-{
-    write_address(addr);
-
-    pp_wcontrol(&pp, pp_rcontrol(&pp) | PARPORT_CONTROL_AUTOFD);
-    pp_wdata(&pp, 2 | 4);   // P/S=1, CLK=0
-    pp_wdata(&pp, 2);       // P/S=1, CLK=1
-    pp_wdata(&pp, 4);       // P/S=0, CLK=0
-    int i;
-    uint8_t value = 0;
-    for (i = 0; i < 8; ++i)
-    {
-        value <<= 1;
-        if (!(pp_rstatus(&pp) & PARPORT_STATUS_ACK))
-        {
-            value |= 1;
-        }
-        pp_wdata(&pp, 0);   // P/S=0, CLK=1
-        pp_wdata(&pp, 4);   // P/S=0, CLK=0
-    }
-    pp_wdata(&pp, 0);
-
-    return value;
-}
-
 void set_vcc(bool value)
 {
     if (value)
@@ -148,6 +97,92 @@ void set_vpp(bool value)
     {
         pp_wcontrol(&pp, pp_rcontrol(&pp) & ~PARPORT_CONTROL_STROBE);
     }
+}
+
+void set_s4(bool value)
+{
+    if (value)
+    {
+        pp_wcontrol(&pp, pp_rcontrol(&pp) | PARPORT_CONTROL_SELECT);
+    }
+    else
+    {
+        pp_wcontrol(&pp, pp_rcontrol(&pp) & ~PARPORT_CONTROL_SELECT);
+    }
+}
+
+void set_s6(bool value)
+{
+    if (value)
+    {
+        pp_wcontrol(&pp, pp_rcontrol(&pp) & ~PARPORT_CONTROL_AUTOFD);
+    }
+    else
+    {
+        pp_wcontrol(&pp, pp_rcontrol(&pp) | PARPORT_CONTROL_AUTOFD);
+    }
+}
+
+void write_address(uint32_t value)
+{
+    pp_wdata(&pp, 0);
+    set_s6(false);
+    int i;
+    const int addr_size = 24;
+    for (i = 0; i < addr_size; ++i)
+    {
+        value <<= 1;
+        uint8_t data = (value & (1 << addr_size)) ? 2 : 0;    // D
+        pp_wdata(&pp, data);
+        pp_wdata(&pp, data | 1);    // CLK
+        pp_wdata(&pp, data);
+    }
+}
+
+void write_data_w_delay(uint32_t addr, uint8_t value, unsigned int usec)
+{
+    write_address(addr);
+    set_s6(true);
+
+    usleep(2);
+    pp_wdata(&pp, value);
+    usleep(2);
+    set_s4(false);
+    if (usec)
+    {
+        usleep(usec);
+    }
+    set_s4(true);
+}
+
+void write_data(uint32_t addr, uint8_t value)
+{
+    write_data_w_delay(addr, value, 0);
+}
+
+uint8_t read_data(uint32_t addr)
+{
+    write_address(addr);
+    set_s6(false);
+
+    pp_wdata(&pp, 2 | 4);   // P/S=1, CLK=0
+    pp_wdata(&pp, 2);       // P/S=1, CLK=1
+    pp_wdata(&pp, 4);       // P/S=0, CLK=0
+    int i;
+    uint8_t value = 0;
+    for (i = 0; i < 8; ++i)
+    {
+        value <<= 1;
+        if (!(pp_rstatus(&pp) & PARPORT_STATUS_ACK))
+        {
+            value |= 1;
+        }
+        pp_wdata(&pp, 0);   // P/S=0, CLK=1
+        pp_wdata(&pp, 4);   // P/S=0, CLK=0
+    }
+    pp_wdata(&pp, 0);
+
+    return value;
 }
 
 uint16_t get_id(void)
@@ -415,10 +450,12 @@ int main(int argc, char **argv)
     }
 
     pp_wdata(&pp, 0);
-    pp_wcontrol(&pp, (pp_rcontrol(&pp) | PARPORT_CONTROL_SELECT) & ~PARPORT_CONTROL_AUTOFD);
+    set_s4(true);
+    set_s6(true);
+    set_vpp(false);
+    set_vcc(false);
 
     set_vcc(true);
-    set_vpp(false);
 
     usleep(100000);
 
