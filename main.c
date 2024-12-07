@@ -245,6 +245,7 @@ void usage(const char *argv0)
                     "\n"
                     "  -p, --port=PORT       select either parport (e.g. /dev/parport0) or physical\n"
                     "                        port (e.g. 0x378). Default is " DEFAULT_PORT ".\n"
+                    "  -i, --id              check memory id\n"
                     "  -e, --erase           erase chip\n"
                     "  -b, --blank-check     black check\n"
                     "  -r, --read=FILENAME   read chip to the specified file\n"
@@ -276,6 +277,7 @@ int main(int argc, char **argv)
     bool do_verify = false;
     uint32_t size = 0;
     uint32_t offset = 0;
+    bool do_id = false;
     int do_test = -1;
 
     while (true)
@@ -295,6 +297,7 @@ int main(int argc, char **argv)
             { "test-d-low",     no_argument,        0, 0 }, // 10
             { "test-clk-high",  no_argument,        0, 0 }, // 11
             { "test-clk-low",   no_argument,        0, 0 }, // 12
+            { "id",             no_argument,        0, 'i' },
             { "port",           required_argument,  0, 'p' },
             { "erase",          no_argument,        0, 'e' },
             { "blank-check",    no_argument,        0, 'b' },
@@ -308,7 +311,7 @@ int main(int argc, char **argv)
         };
 
         int option_index = 0;
-        int c = getopt_long(argc, argv, "p:ebr:w:vs:o:h", long_options, &option_index);
+        int c = getopt_long(argc, argv, "ip:ebr:w:vs:o:h", long_options, &option_index);
 
         if (c == -1)
         {
@@ -321,16 +324,25 @@ int main(int argc, char **argv)
             do_test = option_index;
             break;
 
+        case 'i':
+            do_id = true;
+            break;
+
         case 'p':
             port = optarg;
             break;
 
         case 'e':
+            if (do_id || do_read)
+            {
+                fprintf(stderr, "Conflicting options\n");
+                exit(1);
+            }
             do_erase = true;
             break;
 
         case 'r':
-            if (do_write)
+            if (do_id || do_erase || do_write)
             {
                 fprintf(stderr, "Conflicting options\n");
                 exit(1);
@@ -339,7 +351,7 @@ int main(int argc, char **argv)
             break;
 
         case 'w':
-            if (do_read)
+            if (do_id || do_read)
             {
                 fprintf(stderr, "Conflicting options\n");
                 exit(1);
