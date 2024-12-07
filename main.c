@@ -42,6 +42,7 @@
 #include <getopt.h>
 #include <sched.h>
 #include <limits.h>
+#include <signal.h>
 
 #define DEFAULT_PORT "/dev/parport0"
 
@@ -223,6 +224,13 @@ void usage(const char *argv0)
                     "\n", argv0);
 }
 
+bool terminate = false;
+
+void handle_signal(int)
+{
+    terminate = true;
+}
+
 int main(int argc, char **argv)
 {
     const char *port = DEFAULT_PORT;
@@ -367,6 +375,9 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    signal(SIGTERM, handle_signal);
+    signal(SIGINT, handle_signal);
+
     if (do_test != -1)
     {
         switch (do_test)
@@ -444,7 +455,7 @@ int main(int argc, char **argv)
         fflush(stdout);
 
         /* Wait while the bit is toggling */
-        while (true)
+        while (!terminate)
         {
             uint8_t data1 = read_data(0);
             uint8_t data2 = read_data(0);
@@ -456,14 +467,18 @@ int main(int argc, char **argv)
 
             usleep(100000);
         }
-        printf("\nErase complete\n");
+
+        if (!terminate)
+        {
+            printf("\nErase complete\n");
+        }
     }
 
-    if (do_blank_check)
+    if (!terminate && do_blank_check)
     {
         uint32_t addr;
 
-        for (addr = 0; addr < size; ++addr)
+        for (addr = 0; !terminate && addr < size; ++addr)
         {
             if (addr % 1024 == 0)
             {
@@ -481,10 +496,13 @@ int main(int argc, char **argv)
             }
         }
 
-        printf("\nBlank check complete\n");
+        if (!terminate)
+        {
+            printf("\nBlank check complete\n");
+        }
     }
 
-    if (do_read != NULL)
+    if (!terminate && do_read != NULL)
     {
         int fd = open(do_read, O_CREAT | O_TRUNC | O_WRONLY, 0644);
 
@@ -505,7 +523,7 @@ int main(int argc, char **argv)
 
         uint32_t addr;
 
-        for (addr = 0; addr < size; addr++)
+        for (addr = 0; !terminate && addr < size; addr++)
         {
             if (addr % 1024 == 0)
             {
@@ -514,21 +532,25 @@ int main(int argc, char **argv)
             }
             buf[addr] = read_data(addr);
         }
-        printf("\nRead complete\n");
-
-        if (write(fd, buf, size) != size)
+        
+        if (!terminate)
         {
-            perror("write");
-            free(buf);
-            close(fd);
-            goto failure;
+            printf("\nRead complete\n");
+
+            if (write(fd, buf, size) != size)
+            {
+                perror("write");
+                free(buf);
+                close(fd);
+                goto failure;
+            }
         }
 
         free(buf);
         close(fd);
     }
 
-    if (do_write != NULL)
+    if (!terminate && flash && do_write != NULL)
     {
         int fd = open(do_write, O_RDONLY);
 
@@ -546,7 +568,7 @@ int main(int argc, char **argv)
         /* Store size for verification */
         size = 0;
 
-        while ((read_len = read(fd, buf, buffer_len)) > 0)
+        while (!terminate && (read_len = read(fd, buf, buffer_len)) > 0)
         {
             if (addr % 1024 == 0)
             {
@@ -587,12 +609,16 @@ int main(int argc, char **argv)
                 size += read_len;
             }
         }
-        printf("\nWrite complete\n");
+
+        if (!terminate)
+        {
+            printf("\nWrite complete\n");
+        }
 
         close(fd);
     }
 
-    if (do_verify && do_write != NULL)
+    if (!terminate && do_verify && do_write != NULL)
     {
         int fd = open(do_write, O_RDONLY);
 
@@ -623,7 +649,7 @@ int main(int argc, char **argv)
 
         uint32_t addr;
 
-        for (addr = 0; addr < size; addr++)
+        for (addr = 0; !terminate && addr < size; addr++)
         {
             if (addr % 1024 == 0)
             {
@@ -641,12 +667,18 @@ int main(int argc, char **argv)
                 goto failure;
             }
         }
-        printf("\nVerify complete\n");
+
+        if (!terminate)
+        {
+            printf("\nVerify complete\n");
+        }
 
         free(buf);
     }
 
+    printf("Turning off\n");
     set_vcc(false);
+    usleep(100000);
     pp_close(&pp);
     return 0;
 
