@@ -59,6 +59,8 @@ struct chip_config
 #define K(x) ((x) * 1024)
 struct chip_config chip_config[] =
 {
+    { 0xda08, K(64),  0, "W27C512", -1, -1 },
+
     { 0xda0b, K(256), 0, "W49F002A", 50, 1 },
 
     { 0x01a4, K(512), 0, "Am29F040", 7, 64 },
@@ -160,10 +162,15 @@ void write_data(uint32_t addr, uint8_t value)
     write_data_w_delay(addr, value, 0);
 }
 
-uint8_t read_data(uint32_t addr)
+uint8_t read_data(uint32_t addr, bool pulse_s4)
 {
     write_address(addr);
     set_s6(false);
+
+    if (pulse_s4)
+    {
+        set_s4(false);
+    }
 
     pp_wdata(&pp, 2 | 4);   // P/S=1, CLK=0
     pp_wdata(&pp, 2);       // P/S=1, CLK=1
@@ -181,19 +188,23 @@ uint8_t read_data(uint32_t addr)
         pp_wdata(&pp, 4);   // P/S=0, CLK=0
     }
     pp_wdata(&pp, 0);
+    if (pulse_s4)
+    {
+        set_s4(true);
+    }
 
     return value;
 }
 
-uint16_t get_id(void)
+uint16_t flash_id(void)
 {
     write_data(0x5555, 0xaa);
     write_data(0x2aaa, 0x55);
     write_data(0x5555, 0x90);
     usleep(10000);
 
-    uint16_t id = read_data(0) << 8;
-    id |= read_data(1);
+    uint16_t id = read_data(0, false) << 8;
+    id |= read_data(1, false);
 
     write_data(0x5555, 0xaa);
     write_data(0x2aaa, 0x55);
@@ -245,7 +256,9 @@ void usage(const char *argv0)
                     "\n"
                     "  -p, --port=PORT       select either parport (e.g. /dev/parport0) or physical\n"
                     "                        port (e.g. 0x378). Default is " DEFAULT_PORT ".\n"
-                    "  -i, --id              check memory id\n"
+                    "  -E, --eprom           assume EPROM memory\n"
+                    "  -F, --flash           assume flash memory\n"
+                    "  -i, --id              check memory id (default for flash, optional for EPROM)\n"
                     "  -e, --erase           erase chip\n"
                     "  -b, --blank-check     black check\n"
                     "  -r, --read=FILENAME   read chip to the specified file\n"
@@ -278,6 +291,8 @@ int main(int argc, char **argv)
     uint32_t size = 0;
     uint32_t offset = 0;
     bool do_id = false;
+    bool flash = false;
+    bool eprom = false;
     int do_test = -1;
 
     while (true)
@@ -297,6 +312,8 @@ int main(int argc, char **argv)
             { "test-d-low",     no_argument,        0, 0 }, // 10
             { "test-clk-high",  no_argument,        0, 0 }, // 11
             { "test-clk-low",   no_argument,        0, 0 }, // 12
+            { "flash",          no_argument,        0, 'F' },
+            { "eprom",          no_argument,        0, 'E' },
             { "id",             no_argument,        0, 'i' },
             { "port",           required_argument,  0, 'p' },
             { "erase",          no_argument,        0, 'e' },
@@ -311,7 +328,7 @@ int main(int argc, char **argv)
         };
 
         int option_index = 0;
-        int c = getopt_long(argc, argv, "ip:ebr:w:vs:o:h", long_options, &option_index);
+        int c = getopt_long(argc, argv, "EFip:ebr:w:vs:o:h", long_options, &option_index);
 
         if (c == -1)
         {
@@ -322,6 +339,24 @@ int main(int argc, char **argv)
         {
         case 0:
             do_test = option_index;
+            break;
+
+        case 'F':
+            if (eprom)
+            {
+                fprintf(stderr, "Conflicting options\n");
+                exit(1);
+            }
+            flash = true;
+            break;
+
+        case 'E':
+            if (flash)
+            {
+                fprintf(stderr, "Conflicting options\n");
+                exit(1);
+            }
+            eprom = true;
             break;
 
         case 'i':
@@ -407,6 +442,13 @@ int main(int argc, char **argv)
         }
     }
 
+    // EPROM erase may need different settings
+    if (eprom && do_erase && do_write)
+    {
+        fprintf(stderr, "Conflicting options\n");
+        exit(1);
+    }
+
     if (do_verify && !do_write)
     {
         fprintf(stderr, "Conflicting options\n");
@@ -467,36 +509,54 @@ int main(int argc, char **argv)
     set_vpp(false);
     set_vcc(false);
 
+    if (!eprom && !flash)
+    {
+        fprintf(stderr, "Need to select memory type\n");
+        exit(1);
+    }
+
     set_vcc(true);
 
     usleep(100000);
 
-    uint16_t chip_id = get_id();
-
     struct chip_config *cc = NULL;
-    for (int i = 0; i < sizeof(chip_config) / sizeof(chip_config[0]); ++i)
+
+    if (flash)
     {
-        if (chip_id == chip_config[i].id)
+        uint16_t chip_id = flash_id();
+
+        for (int i = 0; i < sizeof(chip_config) / sizeof(chip_config[0]); ++i)
         {
-            cc = &chip_config[i];
-            break;
+            if (chip_id == chip_config[i].id)
+            {
+                cc = &chip_config[i];
+                break;
+            }
+        }
+
+        if (cc == NULL) 
+        {
+            fprintf(stderr, "Chip id 0x%04x not supported\n", chip_id);
+            goto failure;
+        }
+
+        printf("Chip id 0x%04x (%s)\n", chip_id, cc->name);
+
+        if (size == 0)
+        {
+            size = cc->size;
+        }
+    }
+    else
+    {
+        if (do_read && size == 0)
+        {
+            fprintf(stderr, "Need to provide memory size\n");
+            exit(1);
         }
     }
 
-    if (cc == NULL) 
-    {
-        fprintf(stderr, "Chip id 0x%04x not supported\n", chip_id);
-        goto failure;
-    }
-
-    printf("Chip id 0x%04x (%s)\n", chip_id, cc->name);
-
-    if (size == 0)
-    {
-        size = cc->size;
-    }
-
-    if (do_erase)
+    if (flash && do_erase)
     {
         flash_erase();
 
@@ -506,8 +566,8 @@ int main(int argc, char **argv)
         /* Wait while the bit is toggling */
         while (!terminate)
         {
-            uint8_t data1 = read_data(0);
-            uint8_t data2 = read_data(0);
+            uint8_t data1 = read_data(0, false);
+            uint8_t data2 = read_data(0, false);
 
             if (data1 == 0xff && data2 == 0xff)
             {
@@ -523,6 +583,21 @@ int main(int argc, char **argv)
         }
     }
 
+    if (!terminate && eprom && do_erase)
+    {
+        write_address(0);
+        set_s6(true);
+        pp_wdata(&pp, 0xff);
+
+        set_vpp(true);
+        set_s4(false);
+        usleep(100000);
+        set_s4(true);
+        set_vpp(false);
+
+        printf("Erase complete\n");
+    }
+
     if (!terminate && do_blank_check)
     {
         uint32_t addr;
@@ -535,7 +610,7 @@ int main(int argc, char **argv)
                 fflush(stdout);
             }
 
-            uint8_t byte = read_data(offset + addr);
+            uint8_t byte = read_data(offset + addr, eprom);
 
             if (byte != 0xff)
             {
@@ -579,7 +654,7 @@ int main(int argc, char **argv)
                 printf("\rReading %u kB...", addr / 1024);
                 fflush(stdout);
             }
-            buf[addr] = read_data(addr);
+            buf[addr] = read_data(offset + addr, eprom);
         }
         
         if (!terminate)
@@ -596,6 +671,60 @@ int main(int argc, char **argv)
         }
 
         free(buf);
+        close(fd);
+    }
+
+    if (!terminate && eprom && do_write != NULL)
+    {
+        int fd = open(do_write, O_RDONLY);
+
+        if (fd == -1)
+        {
+            perror(do_write);
+            goto failure;
+        }
+
+        uint8_t buf[1024];
+        uint32_t addr = 0;
+        ssize_t read_len;
+
+        /* Store size for verification */
+        size = 0;
+
+        set_vpp(true);
+
+        while (!terminate && (read_len = read(fd, buf, sizeof(buf))) > 0)
+        {
+            if (addr % 1024 == 0)
+            {
+                printf("\rWriting %u kB...", addr / 1024);
+                fflush(stdout);
+            }
+
+            for (size_t i = 0; i < read_len; ++i)
+            {
+                if (buf[i] != 0xff)
+                {
+                    //printf("Writing offset %d value %d\n", addr, buf[i]);
+                    write_data_w_delay(offset + addr, buf[i], 100);
+                    usleep(100);
+                }
+                else
+                {
+                    //printf("Skipping offset %d value 255\n", addr);
+                }
+                addr++;
+            }
+            size += read_len;
+        }
+
+        set_vpp(false);
+
+        if (!terminate)
+        {
+            printf("\nWrite complete\n");
+        }
+
         close(fd);
     }
 
@@ -706,7 +835,7 @@ int main(int argc, char **argv)
                 fflush(stdout);
             }
 
-            uint8_t byte = read_data(offset + addr);
+            uint8_t byte = read_data(offset + addr, eprom);
 
             if (byte != buf[addr])
             {
