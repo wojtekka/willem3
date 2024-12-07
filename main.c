@@ -233,11 +233,25 @@ int main(int argc, char **argv)
     bool do_verify = false;
     uint32_t size = 0;
     uint32_t offset = 0;
+    int do_test = -1;
 
     while (true)
     {
         static const struct option long_options[] = 
         {
+            { "test-off",       no_argument,        0, 0 }, // 0
+            { "test-vcc-on",    no_argument,        0, 0 }, // 1
+            { "test-vcc-off",   no_argument,        0, 0 }, // 2
+            { "test-vpp-on",    no_argument,        0, 0 }, // 3
+            { "test-vpp-off",   no_argument,        0, 0 }, // 4
+            { "test-s4-high",   no_argument,        0, 0 }, // 5
+            { "test-s4-low",    no_argument,        0, 0 }, // 6
+            { "test-s6-high",   no_argument,        0, 0 }, // 7
+            { "test-s6-low",    no_argument,        0, 0 }, // 8
+            { "test-d-high",    no_argument,        0, 0 }, // 9
+            { "test-d-low",     no_argument,        0, 0 }, // 10
+            { "test-clk-high",  no_argument,        0, 0 }, // 11
+            { "test-clk-low",   no_argument,        0, 0 }, // 12
             { "port",           required_argument,  0, 'p' },
             { "erase",          no_argument,        0, 'e' },
             { "blank-check",    no_argument,        0, 'b' },
@@ -260,6 +274,10 @@ int main(int argc, char **argv)
 
         switch (c)
         {
+        case 0:
+            do_test = option_index;
+            break;
+
         case 'p':
             port = optarg;
             break;
@@ -347,6 +365,42 @@ int main(int argc, char **argv)
         printf("pp_open failed\n");
         perror(port);
         exit(1);
+    }
+
+    if (do_test != -1)
+    {
+        switch (do_test)
+        {
+        case 1: // vcc on
+            pp_wdata(&pp, 0);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT | PARPORT_CONTROL_INIT);
+            break;
+        case 3: // vpp on
+            pp_wdata(&pp, 0);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT | PARPORT_CONTROL_STROBE);
+            break;
+        case 6: // s4 low
+            pp_wdata(&pp, 0);
+            pp_wcontrol(&pp, 0);
+            break;
+        case 8: // s6 low
+            pp_wdata(&pp, 0);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT | PARPORT_CONTROL_AUTOFD);
+            break;
+        case 9: // d high
+            pp_wdata(&pp, 2);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT);
+            break;
+        case 11:    // clk high
+            pp_wdata(&pp, 1);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT);
+            break;
+        default:
+            pp_wdata(&pp, 0);
+            pp_wcontrol(&pp, PARPORT_CONTROL_SELECT);
+            break;
+        }
+        exit(0);
     }
 
     pp_wdata(&pp, 0);
